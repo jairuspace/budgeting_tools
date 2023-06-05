@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "budgeting_tools"
+  site-url: "https://jairuspace.github.io/budgeting_tools"
+  description: "A repo that shares useful budgeting tooling for various budgeting tools.  Helps take your budgeting abilities to the next level!"
+  repo-branch: main
+  repo-url: "https://github.com/jairuspace/budgeting_tools"
