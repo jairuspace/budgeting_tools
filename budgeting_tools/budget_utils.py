@@ -11,7 +11,6 @@ import pandas as pd
 from typing import List
 from .utils import monthdelta
 
-
 # %% ../nbs/00_budget_utils.ipynb 2
 def get_transactions(token: str, n_months: int) -> pd.DataFrame:
     """Function to get all transactions from the last N months"""
