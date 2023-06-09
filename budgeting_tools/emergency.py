@@ -4,9 +4,12 @@
 __all__ = ['get_emergency_fund_status']
 
 # %% ../nbs/00_emergency.ipynb 5
-from budgeting_tools.budget_utils import (get_avg_monthly_spend,
-                                          get_budgeted_balance,
-                                          get_cash_balance, get_transactions)
+from budgeting_tools.budget_utils import (
+    get_transactions,
+    get_avg_monthly_spend,
+    get_cash_balance,
+    get_budgeted_balance,
+)
 
 
 # %% ../nbs/00_emergency.ipynb 15
