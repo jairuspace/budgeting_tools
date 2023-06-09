@@ -11,7 +11,6 @@ from budgeting_tools.budget_utils import (
     get_budgeted_balance,
 )
 
-
 # %% ../nbs/00_emergency.ipynb 15
 def get_emergency_fund_status(
     token, essential_categories, n_months=6, emergency_fund_months=6
