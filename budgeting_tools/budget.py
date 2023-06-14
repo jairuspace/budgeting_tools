@@ -10,7 +10,7 @@ import requests
 import json
 import pandas as pd
 
-# %% ../nbs/budget.ipynb 5
+# %% ../nbs/budget.ipynb 4
 class Budget:
     """A class to represent a YNAB budget for a given month and provides tooling
     to generate and programatically calculate and set budgets"""
