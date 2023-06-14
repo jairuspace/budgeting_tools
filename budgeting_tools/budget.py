@@ -9,9 +9,8 @@ import datetime
 import requests
 import json
 import pandas as pd
-from nbdev import show_doc
 
-# %% ../nbs/budget.ipynb 4
+# %% ../nbs/budget.ipynb 5
 class Budget:
     """A class to represent a YNAB budget for a given month and provides tooling
     to generate and programatically calculate and set budgets"""
