@@ -9,6 +9,7 @@ import datetime
 import requests
 import json
 import pandas as pd
+from nbdev import show_doc
 
 # %% ../nbs/budget.ipynb 4
 class Budget:
