@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['get_emergency_fund_status']
 
-# %% ../nbs/emergency_fund.ipynb 5
+# %% ../nbs/emergency_fund.ipynb 4
 from budgeting_tools.ynab_utils import (
     get_transactions,
     get_avg_monthly_spend,
@@ -11,17 +11,17 @@ from budgeting_tools.ynab_utils import (
     get_budgeted_balance,
 )
 
-# %% ../nbs/emergency_fund.ipynb 14
+# %% ../nbs/emergency_fund.ipynb 13
 def get_emergency_fund_status(
-    token, essential_categories, n_months=6, emergency_fund_months=6
+    essential_categories, n_months=6, emergency_fund_months=6
 ):
     """Function to get the status of the emergency fund.  Returns the amount
     needed to fully fund the emergency fund or the amount of non-emergency cash
     if the emergency fund is fully funded"""
-    trans_df = get_transactions(token, n_months)
+    trans_df = get_transactions(n_months)
     monthly_spend = get_avg_monthly_spend(trans_df, essential_categories)
-    cash = get_cash_balance(token)
-    budgeted = get_budgeted_balance(token)
+    cash = get_cash_balance()
+    budgeted = get_budgeted_balance()
     emergency_fund_size = monthly_spend * emergency_fund_months
     unbudgeted_cash = cash - budgeted
     non_emergency_cash = unbudgeted_cash - (emergency_fund_size * -1)

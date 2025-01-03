@@ -1,0 +1,13 @@
+website:
+  sidebar:
+    contents:
+      - index.ipynb
+      - budget.ipynb
+      - cash.ipynb
+      - emergency_fund.ipynb
+      - plaid.ipynb
+      - utils.ipynb
+      - ynab_utils.ipynb
+      - section: plaid
+        contents:
+          - plaid/auth.ipynb
