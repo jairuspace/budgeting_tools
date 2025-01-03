@@ -1,0 +1,113 @@
+[
+  {
+    "objectID": "cash.html",
+    "href": "cash.html",
+    "title": "budgeting_tools",
+    "section": "",
+    "text": "from budgeting_tools.ynab_utils import get_budgeted_balance, get_account_balances\nimport os\n\n\nbalances = get_account_balances()\nchecking_balances = balances.query('type == \"checking\"')\ncreditcard_balances = balances.query('type == \"creditCard\"')\nsavings_balances = balances.query('type == \"savings\"')\nother_balances = balances.query('type not in [\"checking\", \"creditCard\", \"savings\"]')\n\n\nbudgeted_balance = get_budgeted_balance(os.environ[\"YNAB_TOKEN\"])\n\n\nbudgeted_balance - checking_balances[\"balance\"].sum() / 1000\n\n-963.9400000000005\n\n\n\nimport datetime\nimport requests\nimport pandas as pd\nimport json\n\n\ndef calc_savings_transfer(token):\n    saving_groups = [\n        \"394b0df3-9457-4a5d-913c-72ba3868dc64\",\n        \"db3dbf9f-91c8-4ec8-9b49-847570e5e5dc\",\n    ]\n    date = datetime.datetime.strftime(datetime.datetime.now(), \"%Y-%m\") + \"-01\"\n    month = requests.get(\n        f\"https://api.youneedabudget.com/v1/budgets/last-used/months/{date}?access_token={token}\"\n    )\n    income = json.loads(month.content)[\"data\"][\"month\"][\"to_be_budgeted\"] / 1000\n    category_balances = pd.DataFrame(\n        json.loads(month.content)[\"data\"][\"month\"][\"categories\"]\n    )\n    category_balances[\"balance\"] = category_balances[\"balance\"].apply(\n        lambda x: x / 1000\n    )\n    category_balances = category_balances[category_balances.balance &gt; 0]\n    category_balances = category_balances[\n        category_balances.name != \"Inflow: Ready to Assign\"\n    ]\n    cash_accounts = category_balances[\n        ~category_balances.category_group_id.isin(saving_groups)\n    ]\n    required_cash = income + cash_accounts.balance.sum()\n    accounts = requests.get(\n        f\"https://api.youneedabudget.com/v1/budgets/last-used/accounts?access_token={token}\"\n    )\n    accounts = pd.DataFrame(json.loads(accounts.content)[\"data\"][\"accounts\"])\n    checking_balance = accounts.query(\"name == 'MACU Checking'\").balance[0] / 1000\n    transfer = checking_balance - required_cash\n    if transfer &gt; 0:\n        print(f\"You should transfer ${transfer} from MACU Checking to Savings\")\n    else:\n        print(f\"You should transfer ${transfer * -1} from Savings to MACU Checking\")\n    return transfer, required_cash\n\n\ncalc_savings_transfer(os.environ[\"YNAB_TOKEN\"])\n\nYou should transfer $963.9400000000005 from MACU Checking to Savings\n\n\n(963.9400000000005, 14492.32)",
+    "crumbs": [
+      "cash.html"
+    ]
+  },
+  {
+    "objectID": "ynab_utils.html",
+    "href": "ynab_utils.html",
+    "title": "YNAB API Utils",
+    "section": "",
+    "text": "This notebook contains a few utility functions for interacting with the YNAB API.\n\nsource\n\nget_transactions\n\n get_transactions (n_months:int)\n\nFunction to get all transactions from the last N months\n\nsource\n\n\nget_budgeted_balance\n\n get_budgeted_balance (max_category_balance:int=50000)\n\nFunction to get the total category balances in YNAB\n\nsource\n\n\nget_cash_balance\n\n get_cash_balance ()\n\nFunction to get the total cash balance in YNAB\n\nsource\n\n\nget_account_balances\n\n get_account_balances ()\n\nFunction to get the account balances in YNAB\n\nsource\n\n\nget_avg_monthly_spend\n\n get_avg_monthly_spend (tran_df:pandas.core.frame.DataFrame,\n                        essential_categories:List[str])\n\nFunction to get the average monthly spend for a list of categories. The category names must match exactly what is in YNAB",
+    "crumbs": [
+      "YNAB API Utils"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Budgeting Tools",
+    "section": "",
+    "text": "This repo is a collection of tools that help you manage your budget in You Need A Budget (YNAB).\nIt helps you programmatically manage, analyze, and visualize your budget as well as giving you tools to help you manage your cash flow. It also helps you better understand where your money is going and how to make it work for you.",
+    "crumbs": [
+      "Budgeting Tools"
+    ]
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "Budgeting Tools",
+    "section": "Install",
+    "text": "Install\npip install budgeting_tools",
+    "crumbs": [
+      "Budgeting Tools"
+    ]
+  },
+  {
+    "objectID": "plaid.html",
+    "href": "plaid.html",
+    "title": "budgeting_tools",
+    "section": "",
+    "text": "import plaid\nimport os\n\n\n\nclient_id = os.environ[\"PLAID_CLIENT_ID\"]\nsecret = os.environ[\"PLAID_SECRET\"]\n\n\nconfiguration = plaid.Configuration(\n    host=plaid.Environment.Sandbox,\n    api_key={\n        \"clientId\": client_id,\n        \"secret\": secret,\n    },\n)\n\napi_client = plaid.ApiClient(configuration)\nclient = plaid_api.PlaidApi(api_client)\n\n\nlink_token_response = client.LinkToken.create(\n    {\n        \"user\": {\n            \"client_user_id\": \"unique-user-id\",\n        },\n        \"client_name\": \"Your App Name\",\n        \"products\": [\"auth\", \"investments\"],\n        \"country_codes\": [\"US\"],\n        \"language\": \"en\",\n    }\n)\n\n\nexchange_token_response = client.Item.public_token.exchange(\n    {\n        \"public_token\": \"PUBLIC_TOKEN_RECEIVED_FROM_USER\",\n    }\n)\naccess_token = exchange_token_response[\"access_token\"]\n\n\naccounts_response = client.Accounts.get(access_token)\nholdings_response = client.Investments.holdings.get(access_token)",
+    "crumbs": [
+      "plaid.html"
+    ]
+  },
+  {
+    "objectID": "utils.html",
+    "href": "utils.html",
+    "title": "Utils",
+    "section": "",
+    "text": "date = datetime.datetime.now().date()\nshifted_date = (date + pd.DateOffset(months=1)).date()\n\nprint(f\"Today's date: {date}\")\nprint(f\"Shifted date: {shifted_date}\")\n\nToday's date: 2023-06-05\nShifted date: 2023-07-05\n\n\n\nsource\n\nmonthdelta\n\n monthdelta (date:datetime.date, delta:int)\n\nFunction to add/subtract a certain number of months from a given date eg if it is June I want to go back exactly 3 months\n\nassert datetime.date(2019, 11, 1) == monthdelta(datetime.date(2020, 1, 1), -2)\nassert datetime.date(2020, 9, 1) == monthdelta(datetime.date(2020, 6, 1), 3)",
+    "crumbs": [
+      "Utils"
+    ]
+  },
+  {
+    "objectID": "plaid/auth.html",
+    "href": "plaid/auth.html",
+    "title": "Plaid Auth",
+    "section": "",
+    "text": "from plaid.model.link_token_create_request import LinkTokenCreateRequest\nimport json\nfrom plaid.model.products import Products\nfrom plaid.model.country_code import CountryCode\nfrom plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser\nimport os\nimport time\n\n\nos.\n\n\nconfiguration = plaid.Configuration(\n    host=host,\n    api_key={\n        \"clientId\": os.getenv(PLAID_CLIENT_ID),\n        \"secret\": PLAID_SECRET,\n        \"plaidVersion\": \"2020-09-14\",\n    },\n)\n\n\ndef create_link_token(configuration, PLAID_REDIRECT_URI=None):\n    products = []\n    PLAID_PRODUCTS = [\"auth\", \"transactions\"]\n    for product in PLAID_PRODUCTS:\n        products.append(Products(product))\n    request = LinkTokenCreateRequest(\n        products=products,\n        client_name=\"Plaid Quickstart\",\n        country_codes=list(map(lambda x: CountryCode(x), [\"US\", \"CA\"])),\n        language=\"en\",\n        user=LinkTokenCreateRequestUser(client_user_id=str(time.time())),\n    )\n    if PLAID_REDIRECT_URI != None:\n        request[\"redirect_uri\"] = PLAID_REDIRECT_URI\n    # create link token\n    api_client = plaid.ApiClient(configuration)\n    client = plaid_api.PlaidApi(api_client)\n    response = client.link_token_create(request)\n    return response.to_dict()\n\n\ncreate_link_token()\n\n\n---------------------------------------------------------------------------\nNameError                                 Traceback (most recent call last)\nCell In[9], line 1\n----&gt; 1 create_link_token()\n\nCell In[8], line 16, in create_link_token(PLAID_REDIRECT_URI)\n     14     request[\"redirect_uri\"] = PLAID_REDIRECT_URI\n     15 # create link token\n---&gt; 16 response = client.link_token_create(request)\n     17 return response.to_dict()\n\nNameError: name 'client' is not defined\n\n\n\n\ndef get_access_token():\n    global access_token\n    global item_id\n    global transfer_id\n    public_token = request.form[\"public_token\"]\n    try:\n        exchange_request = ItemPublicTokenExchangeRequest(public_token=public_token)\n        exchange_response = client.item_public_token_exchange(exchange_request)\n        access_token = exchange_response[\"access_token\"]\n        item_id = exchange_response[\"item_id\"]\n        if \"transfer\" in PLAID_PRODUCTS:\n            transfer_id = authorize_and_create_transfer(access_token)\n        return jsonify(exchange_response.to_dict())\n    except app.ApiException as e:\n        return json.loads(e.body)\n\n\ndef get_auth():\n    try:\n        request = AuthGetRequest(access_token=access_token)\n        response = client.auth_get(request)\n        pretty_print_response(response.to_dict())\n        return jsonify(response.to_dict())\n    except app.ApiException as e:\n        error_response = format_error(e)\n        return jsonify(error_response)",
+    "crumbs": [
+      "plaid",
+      "Plaid Auth"
+    ]
+  },
+  {
+    "objectID": "budget.html",
+    "href": "budget.html",
+    "title": "Budget",
+    "section": "",
+    "text": "This module is used to help calculate and programatically set your budget in YNAB. The reason for this is that I like to determine my budget amounts based on some more complex logic that YNAB doesn’t natively support. For example, I like having a mix of percentage based and fixed amount based categories. The initial implementation supports a pattern of: 1. Prefixed-variable categories: - These categories are a percentage of your raw income. 2. Fixed categories: - These categories are a fixed dollar amount from month to month. 3. Postfixed-variable categories: - These categories are a percentage of your remaining income after the prefixed-variable and fixed categories have been budgeted.\nI also like to have certain categories that rollover from month to month. YNAB only supports rolling over budget from one month to the next, but that doesn’t make sense for some categories such as Utilities or Groceries. This modules supports the ability to top-off budgets and take the spillover and apply it to another category. (usually savings of some kind)\nsource",
+    "crumbs": [
+      "Budget"
+    ]
+  },
+  {
+    "objectID": "budget.html#budget-template-explanation",
+    "href": "budget.html#budget-template-explanation",
+    "title": "Budget",
+    "section": "Budget template explanation",
+    "text": "Budget template explanation\nI like to have 2 types of categories, fixed and variable. Variable is effectively a percentage of my income, and fixed is a fixed amount.\nI also like to have an ordering of variable -&gt; fixed -&gt; variable. This is good for things that I want to have a be a percentage of my total income. I call these pre_fixed. An example of this is church tithes, or charitable giving. After I take out the pre_fixed money, I then also take out the fixed money. These are usually things that don’t change from month to month and are exact amounts such as a mortgage, rent, or insurance. After I take out the fixed money, I then take out the variable money. These are things that are more flexible and can change from month to month. An example of this is groceries, gas, or eating out. I have a rough amount that I want to spend on these but it’s not an exact number.\nThe last concept that that is somewhat unique are non-rollover categories. Natively in YNAB, if you don’t spend all of your money in a category, it will rollover to the next month. This is great for things like savings, insurance, or personal spending where having the money build up over time is useful, however, for other things you don’t need money to rollover from one month to the next. An example of this is groceries. If you don’t spend all of your grocery money in one month, you don’t want to have that money rollover to the next.",
+    "crumbs": [
+      "Budget"
+    ]
+  },
+  {
+    "objectID": "budget.html#build-budget-csv",
+    "href": "budget.html#build-budget-csv",
+    "title": "Budget",
+    "section": "Build budget CSV",
+    "text": "Build budget CSV\nThis CSV will have a row for each category. On each row you will need to mark:\n\nif it should be a fixed category (1 for yes, 0 for no)\nif it is a pre_fixed variable category (1 for yes, 0 for no)\nif it is a rollover category (1 for yes, 0 for no).\n\nYou will also need to mark the amount for each category: - If it is intended to be a variable category it should be a percentage (i.e. less than 1) - If it is a fixed category it should be a dollar amount - The sum of your categories that are NOT fixed and NOT pre_fixed should be 1.\nHere’s an example of what a budget file might look like:\n\nbudget_file\n\n\n\n\n\n\n\n\ncategory\nfixed\npre_fixed\nrollover\namount\n\n\n\n\n0\nUtilities\n1\n0\n0\n300.00\n\n\n1\nGroceries\n1\n0\n1\n400.00\n\n\n2\nGas\n1\n0\n1\n100.00\n\n\n3\nPersonal Spending\n0\n0\n1\n0.10\n\n\n4\nGiving\n0\n1\n1\n0.05\n\n\n\n\n\n\n\nYou can also use budget.generate_budget_template_csv() to generate a template based on your current budget. Note: You don’t have to include every single category in your budget file. YNAB sometimes has strange categories that you don’t really want to budget for.\n\nbudget.generate_budget_template_csv().head()\n\n\n\n\n\n\n\n\ncategory\nfixed\npre_fixed\nrollover\namount\n\n\n\n\n0\n🙎🏻‍♂️Jairus\nNone\nNone\nNone\nNone\n\n\n1\n⛪️Fast Offerings\nNone\nNone\nNone\nNone\n\n\n2\n🏝Vacation\nNone\nNone\nNone\nNone\n\n\n3\n🏋️Health\nNone\nNone\nNone\nNone\n\n\n4\n🙍🏼‍♀️Sam\nNone\nNone\nNone\nNone\n\n\n\n\n\n\n\nNow we’ll use that file to calculate how much money we should have in each category.\n\nbudget.calculate_budget_from_template(\n    template_path=\"../family_budget.csv\",\n    spillover_category=\"📈M1 Finance\",\n)\n\nLet’s see what our new budget looks like!\n\ndisplay_categories = budget.new_budget.head().category.unique().tolist()\nbudget.new_budget.head().sort_values(\"category\")\n\n\n\n\n\n\n\n\ncategory\nfixed\npre_fixed\nrollover\namount\ngroup\nbudgeted\n\n\n\n\n1\n⛪️Fast Offerings\n0\n1\n1\n0.01\nChurch\n49560.0\n\n\n0\n⛪️Tithing\n0\n1\n1\n0.10\nChurch\n495560.0\n\n\n2\n🎁Giving\n0\n1\n1\n0.01\nChurch\n49560.0\n\n\n5\n🎉Fun Money\n1\n0\n1\n250.00\nQuality of Life\n250000.0\n\n\n4\n🏋️Health\n1\n0\n1\n20.00\nQuality of Life\n20000.0\n\n\n\n\n\n\n\nNow that we have the budget amounts, we’ll update that in YNAB using their API.\n\nbudget.set_budget()\n\nBudget Updated!\n\n\nLet’s go get the see what the budget from YNAB looks like.\n\nbudget.fetch_budget()\n\nbudget.categories_df.query(f\"hidden == False and name in {display_categories}\")[\n    [\"name\", \"budgeted\", \"activity\", \"balance\"]\n].head().sort_values(\"name\")\n\n\n\n\n\n\n\n\nname\nbudgeted\nactivity\nbalance\n\n\n\n\n1\n⛪️Fast Offerings\n49560\n0\n562050\n\n\n28\n⛪️Tithing\n495560\n0\n3025030\n\n\n9\n🎁Giving\n49560\n0\n799430\n\n\n19\n🎉Fun Money\n250000\n0\n361790\n\n\n3\n🏋️Health\n20000\n0\n68410\n\n\n\n\n\n\n\nAnd make sure we don’t have any money that hasn’t been budgeted.\n\nprint(f\"To be budgeted: ${budget.to_be_budgeted/1000:,.2f}\")\n\nTo be budgeted: $0.00\n\n\nClean up! Since this was just a tutorial we can reset the budget\n\nbudget.zero_out()\n\nBudget Zeroed Out!",
+    "crumbs": [
+      "Budget"
+    ]
+  },
+  {
+    "objectID": "emergency_fund.html",
+    "href": "emergency_fund.html",
+    "title": "Emergency",
+    "section": "",
+    "text": "Set your YNAB_TOKEN environment variable\nWe’ll need a token to access our YNAB account. To get this you’ll need to go into your YNAB account and get one. Then set it as an environment variable.\n\n\nPull down some transactions\n\ntrans_df = get_transactions(3)\ntrans_df.columns\n\n\nessential_categories = [\n    \"🎉Fun Money\",\n    \"🍎Groceries\",\n    \"🏋️Health\",\n    \"🏦Insurance\",\n    \"☎️Phone\",\n    \"🚘Transportation\",\n    \"⚡️Utilities\",\n    \"🏡Mortgage\",\n]\nmonthly_spend = get_avg_monthly_spend(trans_df, essential_categories)\n\n\n\nGet emergency fund size\nTo get our emergency fund size, we’ll just take our average monthly spend on essential categories and multiply it by the number of months we want to have.\n\nemergency_fund_months = 6\nemergency_fund_size = monthly_spend * emergency_fund_months\nprint(f\"Our emergency fund should be ${emergency_fund_size*-1:,.2f}\")\n\nOur emergency fund should be $26,295.24\n\n\n\n\nMake sure we have enough in our emergency fund. Not too much, not too little.\n\ncash = get_cash_balance()\nbudgeted = get_budgeted_balance()\n# print cash and budgeted and add commas to the numbers\nprint(f\"Our total cash balance is ${cash:,.2f}\")\nprint(f\"Our total budgeted balance is ${budgeted:,.2f}\")\n\nOur total cash balance is $155,571.50\nOur total budgeted balance is $16,700.95\n\n\nLets make see how much more we need to save to get to our emergency fund size, or how much more we have than we need and should probably invest.\n\nunbudgeted_cash = cash - budgeted\nnon_emergency_cash = unbudgeted_cash - (emergency_fund_size * -1)\n\nprint(f\"Unbudgeted cash is ${unbudgeted_cash:,.2f}\")\nif non_emergency_cash &gt;= 0:\n    print(\n        f\"Fully funded emergency fund.  Move ${non_emergency_cash:,.2f} to a high yield savings account or investment account.\"\n    )\nelse:\n    print(f\"Save ${non_emergency_cash:,.2f} more to fully fund an emergency fund\")\n\nUnbudgeted cash is $138,870.55\nFully funded emergency fund.  Move $112,575.31 to a high yield savings account or investment account.\n\n\n\nsource\n\n\nget_emergency_fund_status\n\n get_emergency_fund_status (essential_categories, n_months=6,\n                            emergency_fund_months=6)\n\nFunction to get the status of the emergency fund. Returns the amount needed to fully fund the emergency fund or the amount of non-emergency cash if the emergency fund is fully funded\n\nget_emergency_fund_status(essential_categories, 6, 6)\n\n111786.6",
+    "crumbs": [
+      "Emergency"
+    ]
+  }
+]
